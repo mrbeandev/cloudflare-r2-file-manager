@@ -1,0 +1,167 @@
+{
+	"info": {
+		"_postman_id": "c7fc1d8c-44ed-44db-8e3c-5146dea42c09",
+		"name": "R2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29518166"
+	},
+	"item": [
+		{
+			"name": "List all files inside a folder",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/list-files?folder=scikit-learn-data",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"list-files"
+					],
+					"query": [
+						{
+							"key": "folder",
+							"value": "scikit-learn-data"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List all folders",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/list-folders",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"list-folders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Save file inside a folder",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"folder\":\"test\",\n  \"fileName\":\"test.json\",\n  \"content\": {\n    \"key\":\"value\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/create-file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"create-file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete file inside a folder",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"folder\": \"scikit-learn-data\",\n    \"fileName\": \"heart-disease.csv\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/delete-file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"delete-file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update file inside a folder",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"folder\":\"test\",\n  \"fileName\":\"test.json\",\n  \"content\": {\n    \"key\":\"value\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/update-file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"update-file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Read file inside a folder",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/read-file?folder=test&fileName=test.json",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"read-file"
+					],
+					"query": [
+						{
+							"key": "folder",
+							"value": "test"
+						},
+						{
+							"key": "fileName",
+							"value": "test.json"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
