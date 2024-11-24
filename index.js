@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
+const path = require('path');
 const {
   S3Client,
   PutObjectCommand,
@@ -33,6 +34,10 @@ const streamToString = async (stream) => {
   }
   return Buffer.concat(chunks).toString("utf-8");
 };
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'templates/index.html'));
+});
 
 // 1. Create a file inside a folder
 app.post("/create-file", async (req, res) => {
