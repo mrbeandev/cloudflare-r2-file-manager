@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
+const cors = require('cors')
 const path = require('path');
 const {
   S3Client,
@@ -13,6 +14,8 @@ dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors())
+
 
 const s3 = new S3Client({
   region: "auto",
