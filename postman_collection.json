@@ -218,6 +218,40 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Upload files",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "files",
+							"type": "file",
+							"src": "/Users/yashraj/Downloads/tree-736885_1280.jpg"
+						},
+						{
+							"key": "folder",
+							"value": "John",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/upload-files",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"upload-files"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
