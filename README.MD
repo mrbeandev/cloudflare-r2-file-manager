@@ -36,6 +36,7 @@
     AWS_ACCESS_KEY_ID=<your-cloudflare-r2-access-key>
     AWS_SECRET_ACCESS_KEY=<your-cloudflare-r2-secret-key>
     R2_BUCKET_NAME=<your-cloudflare-r2-bucket-name>
+    R2_BUCKET=<your-cloudflare-r2-bucket-name>
     R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
     ```
 
