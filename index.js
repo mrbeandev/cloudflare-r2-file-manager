@@ -157,6 +157,89 @@ app.get("/list-folders", async (req, res) => {
   }
 });
 
+// 7. Duplicate a folder
+app.post("/duplicate-folder", async (req, res) => {
+  const { sourceFolder, targetFolder } = req.body;
+
+  const listParams = {
+    Bucket: BUCKET_NAME,
+    Prefix: `${sourceFolder}/`,
+  };
+
+  try {
+    // List all objects in the source folder
+    const listCommand = new ListObjectsV2Command(listParams);
+    const listData = await s3.send(listCommand);
+
+    if (!listData.Contents || listData.Contents.length === 0) {
+      return res.status(404).send({ message: "Source folder is empty or not found" });
+    }
+
+    // Copy each object to the target folder
+    const copyPromises = listData.Contents.map(async (item) => {
+      const copyParams = {
+        Bucket: BUCKET_NAME,
+        CopySource: `${BUCKET_NAME}/${item.Key}`,
+        Key: item.Key.replace(sourceFolder, targetFolder),
+      };
+      const copyCommand = new PutObjectCommand(copyParams);
+      return s3.send(copyCommand);
+    });
+
+    await Promise.all(copyPromises);
+    res.status(201).send({ message: "Folder duplicated successfully" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// 8. Rename a folder
+app.put("/rename-folder", async (req, res) => {
+  const { sourceFolder, targetFolder } = req.body;
+
+  const listParams = {
+    Bucket: BUCKET_NAME,
+    Prefix: `${sourceFolder}/`,
+  };
+
+  try {
+    // List all objects in the source folder
+    const listCommand = new ListObjectsV2Command(listParams);
+    const listData = await s3.send(listCommand);
+
+    if (!listData.Contents || listData.Contents.length === 0) {
+      return res.status(404).send({ message: "Source folder is empty or not found" });
+    }
+
+    // Copy each object to the target folder and delete original
+    const copyAndDeletePromises = listData.Contents.map(async (item) => {
+      const newKey = item.Key.replace(sourceFolder, targetFolder);
+
+      // Copy object to new location
+      const copyParams = {
+        Bucket: BUCKET_NAME,
+        CopySource: `${BUCKET_NAME}/${item.Key}`,
+        Key: newKey,
+      };
+      const copyCommand = new PutObjectCommand(copyParams);
+      await s3.send(copyCommand);
+
+      // Delete original object
+      const deleteParams = {
+        Bucket: BUCKET_NAME,
+        Key: item.Key,
+      };
+      const deleteCommand = new DeleteObjectCommand(deleteParams);
+      return s3.send(deleteCommand);
+    });
+
+    await Promise.all(copyAndDeletePromises);
+    res.status(200).send({ message: "Folder renamed successfully" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

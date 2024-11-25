@@ -162,6 +162,62 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Duplicate a folder",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"sourceFolder\":\"yashraj\",\n    \"targetFolder\":\"static\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/duplicate-folder",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"duplicate-folder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rename a folder",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"sourceFolder\":\"yashraj\",\n    \"targetFolder\":\"john\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/rename-folder",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"rename-folder"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
