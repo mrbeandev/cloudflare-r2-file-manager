@@ -10,6 +10,7 @@ const {
     DeleteObjectCommand,
     GetObjectCommand,
     ListObjectsV2Command,
+    CopyObjectCommand,
 } = require("@aws-sdk/client-s3");
 dotenv.config();
 
@@ -186,7 +187,7 @@ app.post("/duplicate-folder", async (req, res) => {
                 CopySource: `${BUCKET_NAME}/${item.Key}`,
                 Key: item.Key.replace(sourceFolder, targetFolder),
             };
-            const copyCommand = new PutObjectCommand(copyParams);
+            const copyCommand = new CopyObjectCommand(copyParams);
             return s3.send(copyCommand);
         });
 
