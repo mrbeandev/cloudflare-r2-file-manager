@@ -12,6 +12,8 @@ const {
     ListObjectsV2Command,
     CopyObjectCommand,
 } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
 dotenv.config();
 
 const app = express();
@@ -121,25 +123,31 @@ app.get("/read-file", async (req, res) => {
     }
 });
 
-// 5. List files inside a folder
+// 5. List files inside a folder or root
 app.get("/list-files", async (req, res) => {
     const { folder } = req.query;
 
+    // Adjust the Prefix based on whether a folder is specified
     const params = {
         Bucket: BUCKET_NAME,
-        Prefix: `${folder}/`,
+        Prefix: folder ? `${folder}/` : "",
+        Delimiter: "/", // To distinguish folders at root level
     };
 
     try {
         const command = new ListObjectsV2Command(params);
         const data = await s3.send(command);
 
+        // Get files and folders
         const files = data.Contents?.map((item) => item.Key) || [];
-        res.status(200).send(files);
+        const folders = data.CommonPrefixes?.map((item) => item.Prefix) || [];
+
+        res.status(200).send({ files, folders });
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
 });
+
 
 // 6. List all folders
 app.get("/list-folders", async (req, res) => {
@@ -274,6 +282,39 @@ app.post("/upload-files", upload.array("files", 10), async (req, res) => {
             message: "Files uploaded successfully",
             fileNames: files.map((file) => file.originalname),
         });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// 10. Get URLs for files inside a folder or root
+app.get("/get-file-urls", async (req, res) => {
+    const { folder } = req.query;
+
+    const params = {
+        Bucket: BUCKET_NAME,
+        Prefix: folder ? `${folder}/` : "",
+    };
+
+    try {
+        const command = new ListObjectsV2Command(params);
+        const data = await s3.send(command);
+
+        const files = data.Contents?.map((item) => item.Key) || [];
+
+        // Generate pre-signed URLs for the files
+        const urls = await Promise.all(
+            files.map(async (fileKey) => {
+                const url = await getSignedUrl(
+                    s3,
+                    new GetObjectCommand({ Bucket: BUCKET_NAME, Key: fileKey }),
+                    { expiresIn: 3600 } // URL expires in 1 hour
+                );
+                return { fileKey, url };
+            })
+        );
+
+        res.status(200).send(urls);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
