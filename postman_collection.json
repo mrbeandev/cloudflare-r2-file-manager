@@ -12,7 +12,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:3000/list-files?folder=scikit-learn-data",
+					"raw": "http://localhost:3000/list-files",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -20,12 +20,6 @@
 					"port": "3000",
 					"path": [
 						"list-files"
-					],
-					"query": [
-						{
-							"key": "folder",
-							"value": "scikit-learn-data"
-						}
 					]
 				}
 			},
@@ -140,7 +134,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:3000/read-file?folder=test&fileName=test.json",
+					"raw": "http://localhost:3000/read-file?folder=test&fileName=r2.cloudflare.json",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -156,7 +150,7 @@
 						},
 						{
 							"key": "fileName",
-							"value": "test.json"
+							"value": "r2.cloudflare.json"
 						}
 					]
 				}
@@ -170,7 +164,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sourceFolder\":\"yashraj\",\n    \"targetFolder\":\"static\"\n}",
+					"raw": "{\n    \"sourceFolder\":\"static\",\n    \"targetFolder\":\"john\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -248,6 +242,25 @@
 					"port": "3000",
 					"path": [
 						"upload-files"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get files endpoints",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/get-file-urls",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"get-file-urls"
 					]
 				}
 			},

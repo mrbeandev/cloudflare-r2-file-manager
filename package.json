@@ -11,7 +11,8 @@
   "license": "ISC",
   "description": "`r2-file-manager` is a Node.js API for managing files and folders in Cloudflare R2. It allows you to create, read, update, and delete JSON files, list files in folders, and view all folders in your R2 bucket. This API simplifies file storage and management for web and app configurations.",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.699.0",
+    "@aws-sdk/client-s3": "^3.705.0",
+    "@aws-sdk/s3-request-presigner": "^3.705.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
