@@ -289,7 +289,7 @@ app.post("/upload-files", upload.array("files", 10), async (req, res) => {
 
 // 10. Get URLs for files inside a folder or root
 app.get("/get-file-urls", async (req, res) => {
-    const { folder } = req.query;
+    const { folder, expires } = req.query; // Accept `expires` as a query parameter
 
     const params = {
         Bucket: BUCKET_NAME,
@@ -305,11 +305,17 @@ app.get("/get-file-urls", async (req, res) => {
         // Generate pre-signed URLs for the files
         const urls = await Promise.all(
             files.map(async (fileKey) => {
+                // Generate URL without expiration if expires is not provided
+                const urlOptions = expires
+                    ? { expiresIn: parseInt(expires, 10) } // Use the provided expiration time
+                    : undefined; // No expiration
+
                 const url = await getSignedUrl(
                     s3,
                     new GetObjectCommand({ Bucket: BUCKET_NAME, Key: fileKey }),
-                    { expiresIn: 3600 } // URL expires in 1 hour
+                    urlOptions
                 );
+
                 return { fileKey, url };
             })
         );
