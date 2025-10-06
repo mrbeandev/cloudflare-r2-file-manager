@@ -61,9 +61,39 @@ app.post("/create-file", async (req, res) => {
 
 // 2. Delete a file inside a folder
 app.delete("/delete-file", async (req, res) => {
-    const { folder, fileName } = req.body;
+    const { folder, fileName, fileNames } = req.body;
 
     try {
+        // Handle batch deletion
+        if (fileNames && Array.isArray(fileNames)) {
+            const deleteParams = {
+                Bucket: BUCKET_NAME,
+                Delete: {
+                    Objects: fileNames.map((name) => ({ Key: `${folder}/${name}` }))
+                }
+            };
+
+            const deleteCommand = new DeleteObjectsCommand(deleteParams);
+            const result = await s3.send(deleteCommand);
+
+            const deletedCount = result.Deleted ? result.Deleted.length : 0;
+            const errorCount = result.Errors ? result.Errors.length : 0;
+
+            if (errorCount > 0) {
+                // Some files failed to delete
+                const errorMessages = result.Errors.map(err => `${err.Key}: ${err.Message}`).join('; ');
+                return res.status(207).send({
+                    message: `Deleted ${deletedCount} files successfully, ${errorCount} files failed`,
+                    deleted: deletedCount,
+                    failed: errorCount,
+                    errors: result.Errors
+                });
+            }
+
+            res.status(200).send({ message: `Deleted ${deletedCount} files successfully` });
+            return;
+        }
+
         if (fileName === "*") {
             // Delete all files in the folder
             const listParams = {
