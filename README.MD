@@ -59,7 +59,7 @@ The server will be available at `http://localhost:3000`
 
 ## API Endpoints
 
-1.**Create a File**
+1. **Create a File**
 
 - Endpoint: `POST /create-file`
 - Request Body:
@@ -72,7 +72,7 @@ The server will be available at `http://localhost:3000`
     }
     ```
 
-2.**Delete a File**
+2. **Delete a File**
 
 - Endpoint: `DELETE /delete-file`
 - Request Body (single file):
@@ -95,7 +95,7 @@ The server will be available at `http://localhost:3000`
 
 - Response for wildcard: `{"message": "Deleted X files successfully"}`
 
-3.**Update a File**
+3. **Update a File**
 
 - Endpoint: `PUT /update-file`
 - Request Body:
@@ -108,21 +108,21 @@ The server will be available at `http://localhost:3000`
     }
     ```
 
-4.**Read a File**
+4. **Read a File**
 
 - Endpoint: `GET /read-file`
 - Query Parameters: `folder=folder-name&fileName=file.json`
 
-5.**List Files in a Folder**
+5. **List Files in a Folder**
 
 - Endpoint: `GET /list-files`
 - Query Parameters: `folder=folder-name`
 
-6.**List All Folders**
+6. **List All Folders**
 
 - Endpoint: `GET /list-folders`
 
-7.**Duplicate a Folder**
+7. **Duplicate a Folder**
 
 - Endpoint: `POST /duplicate-folder`
 - Request Body:
@@ -134,7 +134,7 @@ The server will be available at `http://localhost:3000`
     }
     ```
 
-8.**Rename a Folder**
+8. **Rename a Folder**
 
 - Endpoint: `PUT /rename-folder`
 - Request Body:
@@ -146,7 +146,7 @@ The server will be available at `http://localhost:3000`
     }
     ```
 
-9.**Upload Files**
+9. **Upload Files**
 
 - Endpoint: `POST /upload-files`
 - Content-Type: `multipart/form-data`
@@ -155,7 +155,7 @@ The server will be available at `http://localhost:3000`
   - `folder`: Target folder name (optional, defaults to "uploads")
 - Response: `{"message": "Files uploaded successfully", "fileNames": ["file1.jpg", "file2.png"]}`
 
-10.**Get File URLs**
+10. **Get File URLs**
 
 - Endpoint: `GET /get-file-urls`
 - Query Parameters: `folder=folder-name&expires=3600` (expires is optional)
