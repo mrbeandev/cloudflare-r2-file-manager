@@ -129,7 +129,8 @@ app.delete("/delete-file", async (req, res) => {
                 await s3.send(new HeadObjectCommand(headParams));
             } catch (error) {
                 if (error.name === 'NotFound') {
-                    return res.status(404).send({ error: "File not found" });
+                    // File doesn't exist - treat as success for idempotency
+                    return res.status(200).send({ message: "File already deleted or doesn't exist" });
                 }
                 throw error;
             }

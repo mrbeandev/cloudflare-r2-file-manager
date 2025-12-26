@@ -283,9 +283,9 @@
                 <input type="text" id="folder-name-input" placeholder="Folder name"
                     class="w-full border border-gray-300 rounded p-2 mb-3 text-sm">
                 <div class="flex justify-end gap-2">
-                    <button onclick="closeCreateFolderModal()"
+                    <button id="create-folder-cancel-btn" onclick="closeCreateFolderModal()"
                         class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button onclick="createFolder()"
+                    <button id="create-folder-btn" onclick="createFolder()"
                         class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-sm">Create</button>
                 </div>
             </div>
@@ -302,9 +302,9 @@
                 <textarea id="file-content-input" placeholder="File content (JSON)"
                     class="w-full border border-gray-300 rounded p-2 mb-3 h-24 text-sm"></textarea>
                 <div class="flex justify-end gap-2">
-                    <button onclick="closeCreateFileModal()"
+                    <button id="create-file-cancel-btn" onclick="closeCreateFileModal()"
                         class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button onclick="createFile()"
+                    <button id="create-file-btn" onclick="createFile()"
                         class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-sm">Create</button>
                 </div>
             </div>
@@ -319,9 +319,9 @@
                 <input type="text" id="rename-folder-input" placeholder="New folder name"
                     class="w-full border border-gray-300 rounded p-2 mb-3 text-sm">
                 <div class="flex justify-end gap-2">
-                    <button onclick="closeRenameFolderModal()"
+                    <button id="rename-folder-cancel-btn" onclick="closeRenameFolderModal()"
                         class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button onclick="renameFolder()"
+                    <button id="rename-folder-btn" onclick="renameFolder()"
                         class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-sm">Rename</button>
                 </div>
             </div>
@@ -1031,8 +1031,9 @@
 
             try {
                 // For folder uploads, first create all necessary folders
+                const folderPaths = [];
                 if (Object.keys(selectedFoldersForUpload).length > 0) {
-                    const folderPaths = getAllFolderPaths(selectedFoldersForUpload);
+                    folderPaths.push(...getAllFolderPaths(selectedFoldersForUpload));
                     for (const folderPath of folderPaths) {
                         const fullPath = currentFolder ? `${currentFolder}/${folderPath}` : folderPath;
                         await createFolderIfNotExists(fullPath);
@@ -1071,6 +1072,28 @@
                         const progress = (uploadedCount / totalFiles) * 100;
                         progressBar.style.width = `${progress}%`;
                     }
+                }
+
+                // Delete placeholder files after successful upload
+                if (folderPaths.length > 0) {
+                    let deletedPlaceholders = 0;
+                    for (const folderPath of folderPaths) {
+                        const fullPath = currentFolder ? `${currentFolder}/${folderPath}` : folderPath;
+                        try {
+                            const response = await fetch('/delete-file', {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ folder: fullPath, fileName: '.placeholder' })
+                            });
+                            if (response.ok) {
+                                deletedPlaceholders++;
+                            }
+                        } catch (error) {
+                            // Ignore errors when deleting placeholders
+                            console.log('Failed to delete placeholder in:', fullPath);
+                        }
+                    }
+                    console.log(`Cleaned up ${deletedPlaceholders} placeholder files`);
                 }
 
                 showToast(`${totalFiles} file(s) uploaded successfully`);
@@ -1190,7 +1213,16 @@
 
         function closeCreateFolderModal() {
             document.getElementById('create-folder-modal').classList.remove('active');
-            document.getElementById('folder-name-input').value = '';
+            // Reset form state
+            const createBtn = document.getElementById('create-folder-btn');
+            const cancelBtn = document.getElementById('create-folder-cancel-btn');
+            const inputField = document.getElementById('folder-name-input');
+
+            createBtn.disabled = false;
+            createBtn.innerHTML = 'Create';
+            cancelBtn.disabled = false;
+            inputField.disabled = false;
+            inputField.value = '';
         }
 
         async function createFolder() {
@@ -1200,6 +1232,16 @@
                 showToast('Please enter a folder name', 'error');
                 return;
             }
+
+            const createBtn = document.getElementById('create-folder-btn');
+            const cancelBtn = document.getElementById('create-folder-cancel-btn');
+            const inputField = document.getElementById('folder-name-input');
+
+            // Disable UI elements
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 inline mr-1 animate-spin"></i>Creating...';
+            cancelBtn.disabled = true;
+            inputField.disabled = true;
 
             const fullPath = currentFolder ? `${currentFolder}/${folderName}` : folderName;
 
@@ -1224,6 +1266,13 @@
                 }
             } catch (error) {
                 showToast('Failed to create folder: ' + error.message, 'error');
+            } finally {
+                // Re-enable UI elements
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create';
+                cancelBtn.disabled = false;
+                inputField.disabled = false;
+                refreshIcons();
             }
         }
 
@@ -1234,8 +1283,19 @@
 
         function closeCreateFileModal() {
             document.getElementById('create-file-modal').classList.remove('active');
-            document.getElementById('file-name-input').value = '';
-            document.getElementById('file-content-input').value = '';
+            // Reset form state
+            const createBtn = document.getElementById('create-file-btn');
+            const cancelBtn = document.getElementById('create-file-cancel-btn');
+            const nameInput = document.getElementById('file-name-input');
+            const contentInput = document.getElementById('file-content-input');
+
+            createBtn.disabled = false;
+            createBtn.innerHTML = 'Create';
+            cancelBtn.disabled = false;
+            nameInput.disabled = false;
+            contentInput.disabled = false;
+            nameInput.value = '';
+            contentInput.value = '';
         }
 
         async function createFile() {
@@ -1247,12 +1307,31 @@
                 return;
             }
 
+            const createBtn = document.getElementById('create-file-btn');
+            const cancelBtn = document.getElementById('create-file-cancel-btn');
+            const nameInput = document.getElementById('file-name-input');
+            const contentInput = document.getElementById('file-content-input');
+
+            // Disable UI elements
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 inline mr-1 animate-spin"></i>Creating...';
+            cancelBtn.disabled = true;
+            nameInput.disabled = true;
+            contentInput.disabled = true;
+
             let content = {};
             if (fileContent) {
                 try {
                     content = JSON.parse(fileContent);
                 } catch (e) {
                     showToast('Invalid JSON content', 'error');
+                    // Re-enable UI elements on validation error
+                    createBtn.disabled = false;
+                    createBtn.innerHTML = 'Create';
+                    cancelBtn.disabled = false;
+                    nameInput.disabled = false;
+                    contentInput.disabled = false;
+                    refreshIcons();
                     return;
                 }
             }
@@ -1278,6 +1357,14 @@
                 }
             } catch (error) {
                 showToast('Failed to create file: ' + error.message, 'error');
+            } finally {
+                // Re-enable UI elements
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create';
+                cancelBtn.disabled = false;
+                nameInput.disabled = false;
+                contentInput.disabled = false;
+                refreshIcons();
             }
         }
 
@@ -1292,6 +1379,16 @@
         function closeRenameFolderModal() {
             document.getElementById('rename-folder-modal').classList.remove('active');
             renamingFolder = '';
+            // Reset form state
+            const renameBtn = document.getElementById('rename-folder-btn');
+            const cancelBtn = document.getElementById('rename-folder-cancel-btn');
+            const inputField = document.getElementById('rename-folder-input');
+
+            renameBtn.disabled = false;
+            renameBtn.innerHTML = 'Rename';
+            cancelBtn.disabled = false;
+            inputField.disabled = false;
+            inputField.value = '';
         }
 
         async function renameFolder() {
@@ -1301,6 +1398,16 @@
                 showToast('Please enter a new folder name', 'error');
                 return;
             }
+
+            const renameBtn = document.getElementById('rename-folder-btn');
+            const cancelBtn = document.getElementById('rename-folder-cancel-btn');
+            const inputField = document.getElementById('rename-folder-input');
+
+            // Disable UI elements
+            renameBtn.disabled = true;
+            renameBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 inline mr-1 animate-spin"></i>Renaming...';
+            cancelBtn.disabled = true;
+            inputField.disabled = true;
 
             const parentPath = renamingFolder.split('/').slice(0, -1).join('/');
             const targetFolder = parentPath ? `${parentPath}/${newName}` : newName;
@@ -1325,6 +1432,13 @@
                 }
             } catch (error) {
                 showToast('Failed to rename folder: ' + error.message, 'error');
+            } finally {
+                // Re-enable UI elements
+                renameBtn.disabled = false;
+                renameBtn.innerHTML = 'Rename';
+                cancelBtn.disabled = false;
+                inputField.disabled = false;
+                refreshIcons();
             }
         }
 
@@ -1334,6 +1448,27 @@
             const targetFolder = `${folder}_copy`;
 
             if (!confirm(`Duplicate folder "${folderName}"?`)) return;
+
+            // Find the folder item and disable its buttons
+            const folderItems = document.querySelectorAll('.folder-item');
+            let targetFolderItem = null;
+            for (const item of folderItems) {
+                const folderDiv = item.querySelector('div[onclick*="navigateToFolder"]');
+                if (folderDiv && folderDiv.onclick.toString().includes(folder.replace(/\/$/, ''))) {
+                    targetFolderItem = item;
+                    break;
+                }
+            }
+
+            if (targetFolderItem) {
+                const buttons = targetFolderItem.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.onclick.toString().includes('duplicateFolder')) {
+                        btn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+                    }
+                });
+            }
 
             try {
                 const response = await fetch('/duplicate-folder', {
@@ -1354,6 +1489,18 @@
                 }
             } catch (error) {
                 showToast('Failed to duplicate folder: ' + error.message, 'error');
+            } finally {
+                // Re-enable buttons
+                if (targetFolderItem) {
+                    const buttons = targetFolderItem.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        if (btn.onclick.toString().includes('duplicateFolder')) {
+                            btn.innerHTML = '<i data-feather="copy" class="w-4 h-4"></i>';
+                        }
+                    });
+                    refreshIcons();
+                }
             }
         }
 
@@ -1362,6 +1509,27 @@
             const folderName = folder.split('/').pop();
 
             if (!confirm(`Delete folder "${folderName}" and all its contents?`)) return;
+
+            // Find the folder item and disable its buttons
+            const folderItems = document.querySelectorAll('.folder-item');
+            let targetFolderItem = null;
+            for (const item of folderItems) {
+                const folderDiv = item.querySelector('div[onclick*="navigateToFolder"]');
+                if (folderDiv && folderDiv.onclick.toString().includes(folder.replace(/\/$/, ''))) {
+                    targetFolderItem = item;
+                    break;
+                }
+            }
+
+            if (targetFolderItem) {
+                const buttons = targetFolderItem.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.onclick.toString().includes('deleteFolder')) {
+                        btn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+                    }
+                });
+            }
 
             try {
                 const response = await fetch('/delete-file', {
@@ -1382,6 +1550,18 @@
                 }
             } catch (error) {
                 showToast('Failed to delete folder: ' + error.message, 'error');
+            } finally {
+                // Re-enable buttons
+                if (targetFolderItem) {
+                    const buttons = targetFolderItem.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        if (btn.onclick.toString().includes('deleteFolder')) {
+                            btn.innerHTML = '<i data-feather="trash-2" class="w-4 h-4"></i>';
+                        }
+                    });
+                    refreshIcons();
+                }
             }
         }
 
@@ -1391,6 +1571,26 @@
             const folder = file.substring(0, file.lastIndexOf('/'));
 
             if (!confirm(`Delete file "${fileName}"?`)) return;
+
+            // Find the file item and disable its buttons
+            const fileItems = document.querySelectorAll('.file-item');
+            let targetFileItem = null;
+            for (const item of fileItems) {
+                if (item.dataset.file === file) {
+                    targetFileItem = item;
+                    break;
+                }
+            }
+
+            if (targetFileItem) {
+                const buttons = targetFileItem.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.onclick.toString().includes('deleteFile')) {
+                        btn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+                    }
+                });
+            }
 
             try {
                 const response = await fetch('/delete-file', {
@@ -1411,12 +1611,41 @@
                 }
             } catch (error) {
                 showToast('Failed to delete file: ' + error.message, 'error');
+            } finally {
+                // Re-enable buttons
+                if (targetFileItem) {
+                    const buttons = targetFileItem.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        if (btn.onclick.toString().includes('deleteFile')) {
+                            btn.innerHTML = '<i data-feather="trash-2" class="w-4 h-4"></i>';
+                        }
+                    });
+                    refreshIcons();
+                }
             }
         }
 
         // Get file URL
         async function getFileUrl(file) {
             const folder = file.substring(0, file.lastIndexOf('/'));
+
+            // Find the file item and disable the URL button
+            const fileItems = document.querySelectorAll('.file-item');
+            let targetFileItem = null;
+            let urlButton = null;
+            for (const item of fileItems) {
+                if (item.dataset.file === file) {
+                    targetFileItem = item;
+                    urlButton = item.querySelector('button[onclick*="getFileUrl"]');
+                    break;
+                }
+            }
+
+            if (urlButton) {
+                urlButton.disabled = true;
+                urlButton.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i>';
+            }
 
             try {
                 const response = await fetch(`/get-file-urls?folder=${folder}&expires=3600`);
@@ -1432,6 +1661,13 @@
                 }
             } catch (error) {
                 showToast('Failed to get file URL: ' + error.message, 'error');
+            } finally {
+                // Re-enable button
+                if (urlButton) {
+                    urlButton.disabled = false;
+                    urlButton.innerHTML = '<i data-feather="link" class="w-4 h-4"></i>';
+                    refreshIcons();
+                }
             }
         }
 
