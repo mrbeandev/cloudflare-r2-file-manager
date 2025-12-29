@@ -1532,12 +1532,11 @@
             }
 
             try {
-                const response = await fetch('/delete-file', {
+                const response = await fetch('/delete-folders', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        folder: folder,
-                        fileName: '*'
+                        folders: [folder]
                     })
                 });
 

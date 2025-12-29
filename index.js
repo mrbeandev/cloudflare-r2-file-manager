@@ -19,8 +19,47 @@ const s3 = new S3Client({
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-    }
+    },
+    forcePathStyle: true // Important for some self-hosted Minio setups
 });
+
+// Helper to list ALL keys for a prefix (handles pagination > 1000 files)
+const listAllKeys = async (prefix) => {
+    let allKeys = [];
+    let continuationToken = null;
+
+    do {
+        const command = new ListObjectsV2Command({
+            Bucket: BUCKET_NAME,
+            Prefix: prefix,
+            ContinuationToken: continuationToken
+        });
+        const data = await s3.send(command);
+        if (data.Contents) {
+            allKeys = allKeys.concat(data.Contents.map(obj => ({ Key: obj.Key })));
+        }
+        continuationToken = data.NextContinuationToken;
+    } while (continuationToken);
+
+    return allKeys;
+};
+
+// Helper for batch deletion (chunked into 1000s which is S3 limit)
+const batchDeleteKeys = async (keys) => {
+    const CHUNK_SIZE = 1000;
+    let deletedCount = 0;
+
+    for (let i = 0; i < keys.length; i += CHUNK_SIZE) {
+        const chunk = keys.slice(i, i + CHUNK_SIZE);
+        const command = new DeleteObjectsCommand({
+            Bucket: BUCKET_NAME,
+            Delete: { Objects: chunk }
+        });
+        const result = await s3.send(command);
+        deletedCount += result.Deleted ? result.Deleted.length : 0;
+    }
+    return deletedCount;
+};
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -95,29 +134,15 @@ app.delete("/delete-file", async (req, res) => {
         }
 
         if (fileName === "*") {
-            // Delete all files in the folder
-            const listParams = {
-                Bucket: BUCKET_NAME,
-                Prefix: `${folder}/`
-            };
+            // Delete ALL files in the folder (including subfolders)
+            const allKeys = await listAllKeys(`${folder}/`);
 
-            const listCommand = new ListObjectsV2Command(listParams);
-            const listData = await s3.send(listCommand);
-
-            if (!listData.Contents || listData.Contents.length === 0) {
+            if (allKeys.length === 0) {
                 return res.status(404).send({ message: "No files found in the folder" });
             }
 
-            const deleteParams = {
-                Bucket: BUCKET_NAME,
-                Delete: {
-                    Objects: listData.Contents.map((item) => ({ Key: item.Key }))
-                }
-            };
-
-            const deleteCommand = new DeleteObjectsCommand(deleteParams);
-            await s3.send(deleteCommand);
-            res.status(200).send({ message: `Deleted ${listData.Contents.length} files successfully` });
+            const deletedCount = await batchDeleteKeys(allKeys);
+            res.status(200).send({ message: `Deleted ${deletedCount} files successfully (recursive)` });
         } else {
             // Delete single file - first check if it exists
             const headParams = {
@@ -226,6 +251,37 @@ app.get("/list-folders", async (req, res) => {
 
         const folders = data.CommonPrefixes?.map((prefix) => prefix.Prefix) || [];
         res.status(200).send(folders);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// 6b. Delete Folder (New Recursive & Batch Folder support)
+app.delete("/delete-folders", async (req, res) => {
+    const { folders } = req.body; // Array of folder names
+
+    if (!folders || !Array.isArray(folders)) {
+        return res.status(400).send({ error: "Folders array is required" });
+    }
+
+    try {
+        let totalDeleted = 0;
+        let processedFolders = 0;
+
+        for (const folder of folders) {
+            const prefix = folder.endsWith("/") ? folder : `${folder}/`;
+            const keys = await listAllKeys(prefix);
+            if (keys.length > 0) {
+                totalDeleted += await batchDeleteKeys(keys);
+            }
+            processedFolders++;
+        }
+
+        res.status(200).send({
+            message: `Successfully processed ${processedFolders} folders. Total objects deleted: ${totalDeleted}`,
+            foldersProcessed: processedFolders,
+            totalDeleted
+        });
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
